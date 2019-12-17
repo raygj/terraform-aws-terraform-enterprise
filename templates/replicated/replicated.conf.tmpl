@@ -1,0 +1,17 @@
+{
+  "DaemonAuthenticationType"          : "password",
+  "DaemonAuthenticationPassword"      : "${console_password}",
+  "TlsBootstrapType"                  : "self-signed",
+  "BypassPreflightChecks"             : true,
+  "ImportSettingsFrom"                : "/etc/replicated-ptfe.conf",
+  "LicenseFileLocation"               : "/etc/replicated.rli"
+  %{ if  install_type != "external_services-airgap" }
+  ,"HttpProxy"                         : "${proxy_url}"
+  %{ endif }
+  %{ if  split("-", install_type)[1] == "airgap"}
+  ,"LicenseBootstrapAirgapPackagePath" : "/var/lib/ptfe/ptfe.airgap"
+  %{ endif }
+  %{ if release_sequence != "" }
+  ,"ReleaseSequence":             ${release_sequence}
+  %{ endif }
+}
