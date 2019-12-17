@@ -4,37 +4,6 @@ locals {
   install_type     = "${local.app_data_mode}-${local.app_network_type}"
 }
 
-# Settings for automated PTFE installation
-data "template_file" "repl_ptfe_config" {
-  template = local.rptfeconf[local.install_type]
-
-  vars = {
-    hostname               = module.lb.endpoint
-    enc_password           = local.encryption_password
-    iact_subnet_list       = var.iact_subnet_list
-    iact_subnet_time_limit = var.iact_subnet_time_limit
-    pg_user                = var.postgresql_user
-    pg_password            = var.postgresql_password
-    pg_netloc              = var.postgresql_address
-    pg_dbname              = var.postgresql_database
-    pg_extra_params        = var.postgresql_extra_params
-    aws_access_key_id      = var.aws_access_key_id
-    aws_secret_access_key  = var.aws_secret_access_key
-    s3_bucket_name         = var.s3_bucket
-    s3_bucket_region       = var.s3_region
-  }
-}
-
-# Settings for automated replicated installation.
-data "template_file" "repl_config" {
-  template = local.replconf[local.install_type]
-
-  vars = {
-    console_password = random_pet.console_password.id
-    proxy_url        = var.http_proxy_url
-    release_sequence = var.release_sequence
-  }
-}
 
 locals {
   internal_airgap_url = "http://${aws_elb.cluster_api.dns_name}:${local.assistant_port}/setup-files/replicated.tar.gz?token=${random_string.setup_token.result}"
@@ -68,8 +37,30 @@ data "template_file" "cloud_config" {
     startup_script       = base64encode(var.startup_script)
     role                 = count.index == 0 ? "main" : "primary"
     distro               = var.distribution
-    rptfeconf            = base64encode(data.template_file.repl_ptfe_config.rendered)
-    replconf             = base64encode(data.template_file.repl_config.rendered)
+    rptfeconf = base64encode(templatefile("${path.module}/templates/replicated/replicated-ptfe.conf.tmpl",
+      {
+        hostname               = module.lb.endpoint,
+        install_type           = locals.install_type,
+        enc_password           = local.encryption_password,
+        iact_subnet_list       = var.iact_subnet_list,
+        iact_subnet_time_limit = var.iact_subnet_time_limit,
+        pg_user                = var.postgresql_user,
+        pg_password            = var.postgresql_password,
+        pg_netloc              = var.postgresql_address,
+        pg_dbname              = var.postgresql_database,
+        pg_extra_params        = var.postgresql_extra_params,
+        aws_access_key_id      = var.aws_access_key_id,
+        aws_secret_access_key  = var.aws_secret_access_key,
+        s3_bucket_name         = var.s3_bucket,
+        s3_bucket_region       = var.s3_region
+    }))
+    replconf = base64encode(templatefile("${path.module}/templates/replicated/replicated.conf.tmpl",
+      {
+        install_type     = locals.install_type,
+        console_password = random_pet.console_password.id,
+        proxy_url        = var.http_proxy_url,
+        release_sequence = var.release_sequence
+    }))
   }
 }
 
