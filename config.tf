@@ -40,7 +40,7 @@ data "template_file" "cloud_config" {
     rptfeconf = base64encode(templatefile("${path.module}/templates/replicated/replicated-ptfe.conf.tmpl",
       {
         hostname               = module.lb.endpoint,
-        install_type           = locals.install_type,
+        install_type           = local.install_type,
         enc_password           = local.encryption_password,
         iact_subnet_list       = var.iact_subnet_list,
         iact_subnet_time_limit = var.iact_subnet_time_limit,
@@ -56,7 +56,7 @@ data "template_file" "cloud_config" {
     }))
     replconf = base64encode(templatefile("${path.module}/templates/replicated/replicated.conf.tmpl",
       {
-        install_type     = locals.install_type,
+        install_type     = local.install_type,
         console_password = random_pet.console_password.id,
         proxy_url        = var.http_proxy_url,
         release_sequence = var.release_sequence
