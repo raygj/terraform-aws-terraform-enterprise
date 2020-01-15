@@ -2,3 +2,5 @@
 **/.terraform/*
 
 work/
+.DS_Store
+*.terraform
